@@ -1,59 +1,55 @@
-import streamlit as st
-import pdfkit
-import tempfile
+from flask import Flask, render_template, request, jsonify, send_file
+from utils.pdf_generator import generate_resume_pdf
+from utils.ats_calculator import calculate_ats_score
+import os
+from datetime import datetime
+import uuid
 
-st.set_page_config(page_title="Resume Builder", page_icon="📄")
+app = Flask(__name__)
 
-st.title("ATS-Friendly Resume Builder")
+# Ensure folders exist
+os.makedirs("generated_resumes", exist_ok=True)
 
-# ----- User Input -----
-name = st.text_input("Full Name")
-email = st.text_input("Email")
-phone = st.text_input("Phone Number")
-summary = st.text_area("Professional Summary")
-skills = st.text_area("Skills (comma-separated)")
-experience = st.text_area("Experience (one per line)")
-education = st.text_area("Education (one per line)")
+@app.route('/')
+def home():
+    return render_template('resume_form.html')
 
-# ----- Generate PDF -----
-def create_pdf(name, email, phone, summary, skills, experience, education):
-    html_content = f"""
-    <html>
-    <head>
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 40px; }}
-            h1 {{ color: #333; font-size: 28px; }}
-            h2 {{ color: #555; font-size: 20px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }}
-            p, li {{ font-size: 14px; line-height: 1.5; }}
-            ul {{ padding-left: 20px; }}
-        </style>
-    </head>
-    <body>
-        <h1>{name}</h1>
-        <p><strong>Email:</strong> {email} | <strong>Phone:</strong> {phone}</p>
-        {f"<h2>Professional Summary</h2><p>{summary}</p>" if summary else ""}
-        {f"<h2>Skills</h2><ul>" + "".join(f"<li>{s.strip()}</li>" for s in skills.split(',')) + "</ul>" if skills else ""}
-        {f"<h2>Experience</h2><ul>" + "".join(f"<li>{e.strip()}</li>" for e in experience.split('\n')) + "</ul>" if experience else ""}
-        {f"<h2>Education</h2><ul>" + "".join(f"<li>{ed.strip()}</li>" for ed in education.split('\n')) + "</ul>" if education else ""}
-    </body>
-    </html>
-    """
+@app.route('/ats-checker')
+def ats_checker_page():
+    return render_template('ats_checker.html')
 
-    # Save PDF to a temporary file
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    pdfkit.from_string(html_content, temp_file.name)
-    return temp_file.name
+@app.route('/api/generate-resume', methods=['POST'])
+def generate_resume():
+    try:
+        data = request.form.to_dict()
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{data.get('name','user')}_resume_{timestamp}_{uuid.uuid4().hex[:6]}.pdf"
+        filepath = generate_resume_pdf(data, filename)
+        return jsonify({"success": True, "download_url": f"/download/{filename}"})
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Failed to generate resume: {str(e)}"})
 
-if st.button("Generate Resume PDF"):
-    if not name:
-        st.warning("Please enter your name!")
-    else:
-        pdf_file = create_pdf(name, email, phone, summary, skills, experience, education)
-        with open(pdf_file, "rb") as f:
-            st.download_button(
-                label="Download Resume PDF",
-                data=f,
-                file_name=f"{name.replace(' ', '_')}_Resume.pdf",
-                mime="application/pdf"
-            )
-        st.success("Your resume is ready!")
+@app.route('/download/<filename>')
+def download_resume(filename):
+    filepath = os.path.join("generated_resumes", filename)
+    if not os.path.exists(filepath):
+        return jsonify({"error": "File not found"}), 404
+    return send_file(filepath, as_attachment=True)
+
+@app.route('/api/check-ats', methods=['POST'])
+def check_ats():
+    try:
+        resume_file = request.files['resume']
+        job_description = request.form['job_description']
+
+        # Extract resume text (mock extraction)
+        resume_text = resume_file.read().decode('latin1')
+
+        # Calculate ATS score
+        result = calculate_ats_score(resume_text, job_description)
+        return jsonify({"success": True, **result})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+if __name__ == '__main__':
+    app.run(debug=True)

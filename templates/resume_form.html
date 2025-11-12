@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Resume Generator</h1>
+<form id="resumeForm">
+    <input class="rounded" type="text" name="name" placeholder="Full Name" required>
+    <input class="rounded" type="email" name="email" placeholder="Email" required>
+    <input class="rounded" type="text" name="phone" placeholder="Phone" required>
+    <textarea class="rounded" name="summary" placeholder="Professional Summary"></textarea>
+    <input class="rounded" type="text" name="linkedin" placeholder="LinkedIn URL (optional)">
+    <input class="rounded" type="text" name="github" placeholder="GitHub URL (optional)">
+    <input class="rounded" type="text" name="portfolio" placeholder="Portfolio URL (optional)">
+    <textarea class="rounded" name="technical_skills" placeholder="Technical Skills"></textarea>
+    <textarea class="rounded" name="non_technical_skills" placeholder="Non-Technical Skills"></textarea>
+    <textarea class="rounded" name="education" placeholder="Education Details"></textarea>
+    <textarea class="rounded" name="certifications" placeholder="Certifications / Seminars"></textarea>
+    <button type="submit">Generate Resume</button>
+</form>
+<p id="result"></p>
+
+<script>
+document.getElementById("resumeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch("/api/generate-resume", { method: "POST", body: formData });
+    const data = await res.json();
+    if (data.success) {
+        document.getElementById("result").innerHTML = `<div class='score-box'>✅ Resume ready! <a href='${data.download_url}'>Download PDF</a></div>`;
+    } else {
+        document.getElementById("result").innerHTML = `<div class='score-box error'>❌ ${data.error}</div>`;
+    }
+});
+</script>
+{% endblock %}

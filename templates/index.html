@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Resume Generator & ATS Score Checker</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+<h1>Resume Generator</h1>
+<form id="resumeForm" method="POST">
+    <input name="name" placeholder="Full Name" required /><br />
+    <input name="email" placeholder="Email" type="email" required /><br />
+    <input name="phone" placeholder="Phone" required /><br />
+    <input name="linkedin" placeholder="LinkedIn URL" /><br />
+    <input name="github" placeholder="GitHub URL" /><br />
+    <input name="portfolio" placeholder="Portfolio URL" /><br />
+    <textarea name="summary" placeholder="Summary"></textarea><br />
+    <textarea name="technical_skills" placeholder="Technical Skills"></textarea><br />
+    <textarea name="non_technical_skills" placeholder="Non-Technical Skills"></textarea><br />
+    <textarea name="education" placeholder="Education"></textarea><br />
+    <textarea name="certifications" placeholder="Certifications"></textarea><br />
+    <button type="submit">Generate Resume PDF</button>
+</form>
+
+<div id="resumeMessage"></div>
+
+<hr />
+
+<h1>ATS Score Checker</h1>
+
+<form id="atsForm" enctype="multipart/form-data" method="POST">
+    <input type="file" name="resume" accept=".pdf" required /><br />
+    <textarea name="job_description" placeholder="Paste Job Description" required></textarea><br />
+    <input type="url" name="linkedin_url" placeholder="LinkedIn URL (optional)" /><br />
+    <input type="url" name="github_url" placeholder="GitHub URL (optional)" /><br />
+    <input type="url" name="portfolio_url" placeholder="Portfolio URL (optional)" /><br />
+    <button type="submit">Check ATS Score</button>
+</form>
+
+<div id="atsLoading" style="display:none;">Loading...</div>
+<div id="atsErrorMessage" style="color:red;"></div>
+<div id="atsResults" style="display:none;">
+    <h3>ATS Score: <span id="scoreValue"></span>%</h3>
+    <p><strong>Feedback:</strong> <span id="scoreFeedback"></span></p>
+    <p>Keywords matched: <span id="matchedCount"></span> / <span id="totalKeywords"></span></p>
+    <div id="keywordsList"></div>
+</div>
+
+<script src="{{ url_for('static', filename='js/resume.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ats.js') }}"></script>
+</body>
+</html>

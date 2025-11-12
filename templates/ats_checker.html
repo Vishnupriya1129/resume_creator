@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>ATS Score Checker</h1>
+<form id="atsForm" enctype="multipart/form-data">
+    <input class="rounded" type="file" name="resume" accept=".pdf" required>
+    <textarea class="rounded" name="job_description" placeholder="Paste job description..." required></textarea>
+    <button type="submit">Check ATS Score</button>
+</form>
+
+<div id="atsResult"></div>
+
+<script>
+document.getElementById("atsForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const res = await fetch("/api/check-ats", { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (data.success) {
+        document.getElementById("atsResult").innerHTML = `
+            <div class="score-box">
+                <h2>ATS Score: <span>${data.ats_score}%</span></h2>
+                <p><b>Matched Keywords:</b> ${data.matched_keywords.join(", ") || "None"}</p>
+                <p><b>Total Keywords:</b> ${data.total_keywords}</p>
+            </div>`;
+    } else {
+        document.getElementById("atsResult").innerHTML = `<div class="score-box error">${data.error}</div>`;
+    }
+});
+</script>
+{% endblock %}
